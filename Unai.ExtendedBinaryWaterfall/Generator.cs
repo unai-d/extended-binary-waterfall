@@ -25,7 +25,7 @@ public class Generator
 	public Stream InputAuxiliaryFileStream { get; set; }
 	public IParser Parser { get; set; }
 	public IExporter Exporter { get; set; }
-	public int TotalFrames { get; internal set; }
+	public long TotalFrames { get; internal set; }
 
 	private readonly Stopwatch _timer = new();
 	private List<SubFile> _subfiles = [];
@@ -162,7 +162,7 @@ public class Generator
 			_targetFileReader = new BinaryReader(InputFileStream, Encoding.Default, true);
 		}
 		
-		TotalFrames = (int)(InputFileStream.Length / InputBytesPerFrame) + 1;
+		TotalFrames = (InputFileStream.Length / InputBytesPerFrame) + 1;
 
 		if (InputAuxiliaryFileStream == null)
 		{
@@ -474,7 +474,7 @@ public class Generator
 	{
 		Logger.Info("Generating binary waterfall…");
 
-		for (int currentFrame = 0; currentFrame < TotalFrames; currentFrame++)
+		for (long currentFrame = 0; currentFrame < TotalFrames; currentFrame++)
 		{
 			try
 			{
@@ -494,7 +494,7 @@ public class Generator
 		Exporter.Finish();
 	}
 
-	public void GenerateFrame(int frameNum = 0)
+	public void GenerateFrame(long frameNum = 0)
 	{
 		long currentOffset = frameNum * InputBytesPerFrame;
 
