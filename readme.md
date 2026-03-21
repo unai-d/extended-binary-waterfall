@@ -28,8 +28,10 @@ This program **reads computer files** as **raw audio and video streams**, result
 	- `minidump` Python module for Windows Minidump memory region parsing.
 
 > [!IMPORTANT]
-> When using Unifont, make sure to install the **TTF format** instead of OTF.
-> It seems that Unifont contains OTF CFF2 tables that makes the text rendering library throw an exception.
+> The OTF version of Unifont haven't been tested yet, but at some point it made the text rendering library (`SixLabors.Fonts`) throw an error, allegedly because of OTF CFF2 tables not being supported yet.
+> However, as of March 2026, the problem has been apparently solved.
+>
+> If for some reason you still encounter errors, make sure to install the **TTF format** instead of OTF.
 >
 > You can **download** the TTF version from an [**unofficial repository**](https://github.com/multitheftauto/unifont) since it doesn't get officially released by Unifoundry as a TTF file anymore.
 >
