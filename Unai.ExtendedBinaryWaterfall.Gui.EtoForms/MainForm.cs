@@ -192,7 +192,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 
 			_uiPlayerBarTs.Text = $"{_currentFrame} / {_generator.TotalFrames}";
 			_uiPlayHead.MinValue = 0;
-			_uiPlayHead.MaxValue = _generator.TotalFrames;
+			_uiPlayHead.MaxValue = (int)_generator.TotalFrames;
 			_uiPlayHead.Value = _currentFrame;
 		}
 
