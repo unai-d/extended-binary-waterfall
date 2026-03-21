@@ -25,6 +25,7 @@
 		<PackageReference Include="SDL-Sharp-DLL" Version="2.1.4" />
 		<!-- Used by FfmpegExporter -->
 		<PackageReference Include="FFmpeg.AutoGen" Version="8.0.0" />
+		<PackageReference Include="Spectre.Console" Version="0.54.0" />
 	</ItemGroup>
 
 </Project>

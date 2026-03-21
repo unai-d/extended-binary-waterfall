@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Spectre.Console;
 
 namespace Unai.ExtendedBinaryWaterfall;
 
@@ -12,20 +13,33 @@ public static class Logger
 
 	public static bool UseColor { get; set; } = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NOCOLOR"));
 
+	public static readonly IAnsiConsole ConsoleOut = AnsiConsole.Create(new AnsiConsoleSettings()
+	{
+		Out = new AnsiConsoleOutput(Console.Error)
+	});
+
 	private static void Print(string message, LogLevel logLevel, StackFrame sf)
 	{
 		var callingMethod = sf?.GetMethod();
 		var source = callingMethod != null ? $"{callingMethod.DeclaringType?.Name} {callingMethod.Name}" : "?";
-		var logLevelAnsiColor = logLevel switch
+		
+		if (UseColor)
 		{
-			LogLevel.Fail => "\x1b[31m",
-			LogLevel.Error => "\x1b[91m",
-			LogLevel.Warning => "\x1b[93m",
-			LogLevel.Debug => "\x1b[92m",
-			LogLevel.Trace => "\x1b[32m",
-			_ => "\x1b[0m",
-		};
-		Console.Error.WriteLine(UseColor ? $"\x1b[90m{source} {logLevelAnsiColor}{message}\x1b[0m" : $"{source} {message}");
+			var logLevelColorName = logLevel switch
+			{
+				LogLevel.Fail => "maroon",
+				LogLevel.Error => "red",
+				LogLevel.Warning => "yellow",
+				LogLevel.Debug => "green",
+				LogLevel.Trace => "aqua",
+				_ => "white",
+			};
+			ConsoleOut.MarkupLineInterpolated($"[gray]{source}[/] [{logLevelColorName}]{message}[/]");
+		}
+		else
+		{
+			ConsoleOut.WriteLine($"{source} {message}");
+		}
 	}
 
 	public static void Fail(string message)
