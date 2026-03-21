@@ -28,7 +28,7 @@ public class Generator
 	public long TotalFrames { get; internal set; }
 
 	private readonly Stopwatch _timer = new();
-	private List<SubFile> _subfiles = [];
+	public List<SubFile> SubFiles { get; set; } = [];
 	private BinaryReader _targetFileReader = null;
 	private string _avSettingsString = null;
 	private string _readSpeedString = null;
@@ -149,6 +149,8 @@ public class Generator
 
 	public void Initialize()
 	{
+		Logger.Info("Initializing…");
+
 		if (InputFileStream == null)
 		{
 			Logger.Info("Opening files…");
@@ -200,6 +202,8 @@ public class Generator
 		}
 
 		LogGeneratorStatus();
+
+		Logger.Info($"Initialization finished.");
 	}
 
 	[Conditional("DEBUG")]
@@ -311,7 +315,11 @@ public class Generator
 
 	private void ParseSubfiles()
 	{
-		if (_subfiles.Count != 0) return;
+		if (SubFiles.Count != 0)
+		{
+			Logger.Debug("Subfiles already parsed.");
+			return;
+		}
 
 		IEnumerable<SubFile> subFiles = null;
 
@@ -332,7 +340,7 @@ public class Generator
 
 			// Order generated file listing by position inside the file (offset).
 			// Parse further with `ParseSubfile` if necessary.
-			_subfiles =
+			SubFiles =
 			[
 				.. subFiles
 				.OrderBy(sf => sf.StartOffset)
@@ -340,11 +348,11 @@ public class Generator
 			];
 		}
 
-		Logger.Debug($"Total number of subfiles: {_subfiles.Count}");
+		Logger.Debug($"Total number of subfiles: {SubFiles.Count}");
 
 		if (LogAllSubfiles)
 		{
-			foreach (var sf in _subfiles)
+			foreach (var sf in SubFiles)
 			{
 				Logger.Debug($"\t{sf.IconString ?? "–"} '{sf.Path}' {sf.StartOffset:X8}–{sf.EndOffset:X8}");
 			}
@@ -407,7 +415,7 @@ public class Generator
 			WaterfallScaledWidth = (int)(WaterfallWidth * (pixelCount / 691200f));
 			WaterfallScaledHeight = (int)(WaterfallHeight * (pixelCount / 691200f));
 
-			_videoFrameX1 = OutputVideoWidth / (_subfiles.Count > 0 ? 4 : 2) - WaterfallScaledWidth / 2;
+			_videoFrameX1 = OutputVideoWidth / (SubFiles.Count > 0 ? 4 : 2) - WaterfallScaledWidth / 2;
 			if (_videoFrameX2 == 0) _videoFrameX2 = _videoFrameX1 + WaterfallScaledWidth;
 			_videoFrameY1 = OutputVideoHeight / 2 - WaterfallScaledHeight / 2;
 			if (_videoFrameY2 == 0) _videoFrameY2 = _videoFrameY1 + WaterfallScaledHeight;
@@ -558,7 +566,7 @@ public class Generator
 
 		// Compute registers.
 
-		var subfilesInFrame = _subfiles
+		var subfilesInFrame = SubFiles
 			.Select((sf, i) => new { key = i, value = sf })
 			.Where(kvp => kvp.value.Intersects(currentOffset - (InputBytesPerFrame / 2), currentOffset + (InputBytesPerFrame / 2)))
 			.ToList();
@@ -592,13 +600,13 @@ public class Generator
 			{
 				int i = sfi - (currentSubfile?.key ?? 0);
 
-				if (sfi < 0 || sfi >= _subfiles.Count)
+				if (sfi < 0 || sfi >= SubFiles.Count)
 				{
 					subfileY += subfileH;
 					continue;
 				}
 
-				var subfile = _subfiles[sfi];
+				var subfile = SubFiles[sfi];
 
 				bool isMainSubfile = sfi == (currentSubfile?.key ?? -1);
 

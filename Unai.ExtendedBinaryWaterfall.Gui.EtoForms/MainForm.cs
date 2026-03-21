@@ -62,7 +62,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 			_uiPlayHead.ValueChanged += (s, e) =>
 			{
 				_currentFrame = _uiPlayHead.Value;
-				UpdateAll();
+				UpdateUI();
 			};
 
 			_uiPlayerBar = new()
@@ -166,7 +166,10 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 			UpdateControls();
 		}
 
-		private void UpdateAll()
+		/// <summary>
+		/// Updates the entire user interface.
+		/// </summary>
+		private void UpdateUI()
 		{
 			if (FileIsOpened)
 			{
@@ -212,6 +215,9 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 			_inputFilePath = inputFilePath;
 			_generator.InputFilePath = _inputFilePath;
 			_generator.Exporter ??= new InternalExporter(this);
+			// Force update
+			_generator.InputFileStream = null;
+			_generator.SubFiles = [];
 
 			// TODO: Use Utils common method for this.
 			var inputFileExtension = Path.GetExtension(_inputFilePath);
@@ -233,8 +239,10 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 
 			_generator.Initialize();
 
-			UpdateAll();
+			UpdateUI();
 		}
+
+		#region Command Handlers
 
 		private void HandleOpenFile(object sender, EventArgs e)
 		{
@@ -253,6 +261,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 				return;
 			}
 
+			// TODO: Is there a way to close the dialog while this call does stuff?
 			UpdateBasedOnInputFile(fileOpenDlg.FileName);
 		}
 
@@ -288,7 +297,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 				MessageBox.Show($"Cannot initialize parser: {ex.Message}\n{ex.StackTrace}", MessageBoxType.Error);
 			}
 
-			UpdateAll();
+			UpdateUI();
 		}
 
 		private void HandleSetBitrate(object sender, EventArgs e)
@@ -301,7 +310,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 					_generator.Initialize();
 				}
 
-				UpdateAll();
+				UpdateUI();
 			}
 		}
 
@@ -400,6 +409,8 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 				}
 			});
 		}
+
+		#endregion
 
 		protected override void OnSizeChanged(EventArgs e)
 		{
