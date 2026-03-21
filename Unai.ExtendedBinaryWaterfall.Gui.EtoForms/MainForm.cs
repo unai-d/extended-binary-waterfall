@@ -186,11 +186,20 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 
 		private void UpdateControls()
 		{
+			// Update viewport.
+
 			_uiViewport.Width = _uiViewport.LogicalParent.Width;
 			if (_uiViewport.Width < 1) _uiViewport.Width = Width;
 			_uiViewport.Height = ClientSize.Height - _uiPlayerBar.Height - _uiPlayerBar.Height - 32;
 
-			_uiPlayerBarTs.Text = $"{_currentFrame} / {_generator.TotalFrames}";
+			// Update timestamp.
+
+			var currentTs = TimeSpan.FromSeconds(_currentFrame / _generator.OutputFps);
+			var totalTs = TimeSpan.FromSeconds(_generator.TotalFrames / _generator.OutputFps);
+			_uiPlayerBarTs.Text = $"{currentTs} / {totalTs}";
+
+			// Update timeline/playhead.
+
 			_uiPlayHead.MinValue = 0;
 			_uiPlayHead.MaxValue = (int)_generator.TotalFrames;
 			_uiPlayHead.Value = _currentFrame;
