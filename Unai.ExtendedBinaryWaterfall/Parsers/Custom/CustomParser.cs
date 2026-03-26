@@ -21,6 +21,7 @@ public class CustomParser : IParser
 
 		foreach (var row in csvValues.Skip(1))
 		{
+			if (row.Length < 4) continue;
 			yield return new(row[3], long.Parse(row[0]), long.Parse(row[1]));
 		}
 	}
