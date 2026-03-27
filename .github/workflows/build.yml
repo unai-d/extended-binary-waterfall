@@ -1,0 +1,43 @@
+name: .NET
+
+on:
+  push:
+    branches:
+    - main
+    - dev
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+      # The following options are required for version calculation.
+      with:
+        fetch-depth: 100
+        fetch-tags: true
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build (GtkSharp GUI)
+      run: dotnet build --no-restore Unai.ExtendedBinaryWaterfall.Gui.GtkSharp
+    - name: Build (EtoForms GTK GUI)
+      run: dotnet build --no-restore Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Gtk
+#    - name: Test
+#      run: dotnet test --no-build --verbosity normal
+
+    - name: Upload artifact (GtkSharp GUI)
+      uses: actions/upload-artifact@v4
+      with:
+        name: ebw-gtksharp
+        path: ${{ github.workspace }}/Unai.ExtendedBinaryWaterfall.Gui.GtkSharp/bin
+    - name: Upload artifact (EtoForms GTK GUI)
+      uses: actions/upload-artifact@v4
+      with:
+        name: ebw-etoforms-gtk
+        path: ${{ github.workspace }}/Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Gtk/bin
