@@ -1,6 +1,8 @@
 # Extended Binary Waterfall
 ![GitHub Tag](https://img.shields.io/github/v/tag/unai-d/extended-binary-waterfall?style=flat-square&label=latest%20tag)
 
+![Main Window Screenshot](./img/main_window.png)
+
 This program **reads computer files** as **raw audio and video streams**, resulting in what's sometimes known as a **binary waterfall**. The “extended” part of it is the inclusion of a **detailed walktrough** of the **fragments, chunks or subfiles** that the target file may have.
 
 > [!WARNING]
