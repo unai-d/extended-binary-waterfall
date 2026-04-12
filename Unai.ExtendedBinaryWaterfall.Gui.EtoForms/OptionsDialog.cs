@@ -37,6 +37,11 @@ public class OptionsDialog : Dialog
 
 		foreach (var prop in Utils.GetPropertiesWithAttribute<CliParameterAttribute>(typeof(Generator)))
 		{
+			if (prop.Name == nameof(Generator.ExporterId))
+			{
+				continue;
+			}
+
 			Logger.Debug($"Creating controls for property `{prop.Name}`…");
 
 			var paramAttr = prop.GetCustomAttribute<CliParameterAttribute>();
@@ -122,7 +127,7 @@ public class OptionsDialog : Dialog
 	{
 		Control ret = null;
 
-		if (prop == typeof(Generator).GetProperty(nameof(Generator.ExporterId)))
+		if (prop == typeof(Generator).GetProperty(nameof(Generator.InputFileFormatId)))
 		{
 			// Exporter ID.
 
