@@ -19,9 +19,8 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 	{
 		internal Generator _generator = new();
 		internal int _currentFrame = 0;
-		private readonly string _nullParserId = typeof(CustomParser).GetCustomAttribute<ParserAttribute>().Id;
+		internal static readonly string _nullParserId = typeof(CustomParser).GetCustomAttribute<ParserAttribute>().Id;
 		private string _inputFilePath = null;
-		private string _inputAuxFilePath = null;
 
 		#region Controls
 
@@ -30,9 +29,9 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 		internal TableLayout _uiPlayerBar = null;
 		internal Label _uiPlayerBarTs = new();
 		internal Slider _uiPlayHead = null;
-		internal TableLayout _uiConfigPanel = null;
-		internal DropDown _uiParserDropDown = null;
-		internal TextBox _uiBitrate = null;
+		// internal TableLayout _uiConfigPanel = null;
+		// internal DropDown _uiParserDropDown = null;
+		// internal TextBox _uiBitrate = null;
 
 		#endregion
 
@@ -83,31 +82,6 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 				}
 			};
 
-			_uiParserDropDown = new DropDown();
-			foreach (var parser in Utils.GetTypesWithAttribute<ParserAttribute>())
-			{
-				_uiParserDropDown.Items.Add(parser.Key.Name, parser.Key.Id);
-			}
-			_uiParserDropDown.SelectedKey = _nullParserId;
-			_uiParserDropDown.SelectedKeyChanged += HandleSetParser;
-
-			_uiBitrate = new()
-			{
-				Text = _generator.InputBytesPerSecond.ToString()
-			};
-			_uiBitrate.TextChanged += HandleSetBitrate;
-
-			_uiConfigPanel = new TableLayout()
-			{
-				Padding = 8,
-				Spacing = new Size(8, 8),
-				Rows =
-				{
-					new TableRow("Input file parser", "Input bitrate (bytes/s)"),
-					new TableRow(_uiParserDropDown, _uiBitrate)
-				}
-			};
-
 			_uiMain = new TableLayout
 			{
 				Spacing = new Size(8, 8),
@@ -115,7 +89,6 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 				{
 					TableRow.Scaled(_uiViewport),
 					new TableRow(_uiPlayerBar),
-					new TableRow(_uiConfigPanel)
 				}
 			};
 
@@ -142,6 +115,9 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 			var aboutCommand = new Command { MenuText = "About…" };
 			aboutCommand.Executed += HandleShowAboutDialog;
 
+			var optionsCommand = new Command { MenuText = "&Options…" };
+			optionsCommand.Executed += HandleShowOptionsForm;
+
 			Menu = new MenuBar
 			{
 				Items =
@@ -158,7 +134,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 				},
 				ApplicationItems =
 				{
-					new ButtonMenuItem { Text = "&Preferences…" },
+					optionsCommand
 				},
 				QuitItem = quitCommand,
 				AboutItem = aboutCommand
@@ -238,6 +214,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 			_generator.InputFilePath = _inputFilePath;
 			_generator.Exporter ??= new InternalExporter(this);
 			// Force update
+			_generator.InputFileStream?.Dispose();
 			_generator.InputFileStream = null;
 			_generator.SubFiles = [];
 
@@ -248,15 +225,16 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 			{
 				if (parser.Key.FileExtensions.Contains(inputFileExtension))
 				{
-					_uiParserDropDown.SelectedKey = parser.Key.Id;
+					// _uiParserDropDown.SelectedKey = parser.Key.Id;
+					_generator.ExporterId = parser.Key.Id;
 					formatDetected = true;
 					break;
 				}
 			}
 
-			if (formatDetected)
+			if (!formatDetected)
 			{
-				HandleSetParser(this, null);
+				MessageBox.Show("Cannot auto-detect input file format. You can manually specify it at File » Options.", MessageBoxType.Warning);
 			}
 
 			_generator.Initialize();
@@ -293,21 +271,22 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 			{
 				ProgramName = BuildInfo.ApplicationName,
 				Version = BuildInfo.SemVer,
-				Website = new Uri("https://github.com/unai-d/extended-binary-waterfall")
+				Website = new Uri("https://github.com/unai-d/extended-binary-waterfall"),
+				Developers = [ "Unai Domínguez" ]
 			};
 			abtDiag.ShowDialog(this);
 		}
 
-		private void HandleSetParser(object sender, EventArgs e)
+		private void HandleShowOptionsForm(object sender, EventArgs e)
 		{
-			var parserAttr = Utils.GetTypesWithAttribute<ParserAttribute>().FirstOrDefault(pa => pa.Key.Id == _uiParserDropDown.SelectedKey);
-			if (parserAttr.Key == null)
+			if (_inputFilePath == null)
 			{
-				// TODO: handle.
+				MessageBox.Show("Please open an input file first to change the options.", MessageBoxType.Information);
 				return;
 			}
-			Logger.Debug($"Selected parser ID: '{parserAttr.Key.Id}'.");
-			_generator.Parser = (IParser)Activator.CreateInstance(parserAttr.Value);
+
+			var optsForm = new OptionsDialog(_generator);
+			optsForm.ShowModal();
 
 			try
 			{
@@ -317,22 +296,6 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 			{
 				Logger.Fail(ex.ToString());
 				MessageBox.Show($"Cannot initialize parser: {ex.Message}\n{ex.StackTrace}", MessageBoxType.Error);
-			}
-
-			UpdateUI();
-		}
-
-		private void HandleSetBitrate(object sender, EventArgs e)
-		{
-			if (int.TryParse(_uiBitrate.Text, out var result))
-			{
-				if (result > 1024)
-				{
-					_generator.InputBytesPerSecond = result;
-					_generator.Initialize();
-				}
-
-				UpdateUI();
 			}
 		}
 
