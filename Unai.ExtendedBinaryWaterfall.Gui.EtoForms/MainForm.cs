@@ -11,6 +11,7 @@ using Unai.ExtendedBinaryWaterfall.Exporters;
 using System.Threading.Tasks;
 using Eto;
 using System.IO;
+using System.Diagnostics;
 
 namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 {
@@ -164,6 +165,27 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms
 			};
 
 			UpdateControls();
+
+			if (FfmpegUtils.GetFfmpegLibraryPath() == null)
+			{
+				if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+				{
+					var res = MessageBox.Show("Cannot find FFmpeg libraries. Would you like to download them via WinGet?", MessageBoxButtons.YesNo, MessageBoxType.Warning);
+
+					// WARNING: This code is untested! It should make a terminal window appear.
+					if (res == DialogResult.Yes)
+					{
+						var wingetProc = Process.Start("winget", "install \"FFmpeg (Shared)\"");
+						wingetProc.WaitForExit();
+
+						MessageBox.Show("Please restart the application to apply changes.", MessageBoxType.Information);
+					}
+				}
+				else
+				{
+					MessageBox.Show("Cannot find FFmpeg libraries. Please install them with the correspondent package manager, and then restart the application.", MessageBoxType.Error);
+				}
+			}
 		}
 
 		/// <summary>
