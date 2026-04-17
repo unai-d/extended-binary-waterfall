@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -374,5 +375,19 @@ public static class Utils
 	{
 		return GetPropertiesWithAttribute<CliParameterAttribute>()
 			.Where(p => argName.Length == 2 ? p.GetCustomAttribute<CliParameterAttribute>().ShortParameterName == argName[1] : p.GetCustomAttribute<CliParameterAttribute>().LongParameterName == argName[2..]).FirstOrDefault();
+	}
+
+	public static bool ArrayCompare<T>(T[] a1, T[] a2) where T : IComparable<T>
+	{
+		ArgumentNullException.ThrowIfNull(a1);
+		ArgumentNullException.ThrowIfNull(a2);
+		if (a1.Length != a2.Length) throw new ArgumentException("Array size mismatch.");
+
+		for (int i = 0; i < a1.Length; i++)
+		{
+			if (a1[i].CompareTo(a2[i]) != 0) return false;
+		}
+
+		return true;
 	}
 }
