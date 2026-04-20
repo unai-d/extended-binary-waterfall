@@ -1,5 +1,7 @@
 # Extended Binary Waterfall
+
 ![GitHub Tag](https://img.shields.io/github/v/tag/unai-d/extended-binary-waterfall?style=flat-square&label=latest%20tag)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/unai-d/extended-binary-waterfall/build.yml)
 
 ![Main Window Screenshot](./img/main_window.png)
 
@@ -8,6 +10,12 @@ This program **reads computer files** as **raw audio and video streams**, result
 > [!WARNING]
 > This program is still in development.
 > Some code is still untested, and errors are expected to happen when running this software.
+
+## Download
+
+You can download Extended Binary Waterfall from the [Releases page](https://github.com/unai-d/extended-binary-waterfall/releases).
+
+Alternatively, if you have the .NET Runtime already installed on your machine, you might want to get the latest unstable builds from [GitHub Actions](https://github.com/unai-d/extended-binary-waterfall/actions).
 
 ## Dependencies
 
@@ -30,7 +38,7 @@ This program **reads computer files** as **raw audio and video streams**, result
 	- `minidump` Python module for Windows Minidump memory region parsing.
 
 > [!IMPORTANT]
-> The OTF version of Unifont haven't been tested yet, but at some point it made the text rendering library (`SixLabors.Fonts`) throw an error, allegedly because of OTF CFF2 tables not being supported yet.
+> The OTF version of Unifont hasn't been tested yet, but at some point it made the text rendering library (`SixLabors.Fonts`) throw an error at runtime, allegedly because of OTF CFF2 tables not being supported yet.
 > However, as of March 2026, the problem has been apparently solved.
 >
 > If for some reason you still encounter errors, make sure to install the **TTF format** instead of OTF.
