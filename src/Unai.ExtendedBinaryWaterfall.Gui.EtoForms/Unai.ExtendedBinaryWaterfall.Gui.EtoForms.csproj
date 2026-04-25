@@ -5,7 +5,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Eto.Forms" Version="2.10.2" />
+		<PackageReference Include="Eto.Forms" Version="2.11.0" />
 		<ProjectReference Include="../Unai.ExtendedBinaryWaterfall/Unai.ExtendedBinaryWaterfall.csproj" />
 	</ItemGroup>
 
