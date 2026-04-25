@@ -25,17 +25,17 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build (CLI)
-      run: dotnet build --no-restore Unai.ExtendedBinaryWaterfall.Cli
+      run: cd src && dotnet build --no-restore Unai.ExtendedBinaryWaterfall.Cli
     - name: Build (EtoForms GTK GUI)
-      run: dotnet build --no-restore Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Gtk
+      run: cd src && dotnet build --no-restore Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Gtk
 
     - name: Upload artifact (CLI)
       uses: actions/upload-artifact@v4
       with:
-        name: ebw-gtksharp
-        path: ${{ github.workspace }}/Unai.ExtendedBinaryWaterfall.Cli/bin
+        name: ebw-cli
+        path: ${{ github.workspace }}/artifacts/Unai.ExtendedBinaryWaterfall.Cli/bin
     - name: Upload artifact (EtoForms GTK GUI)
       uses: actions/upload-artifact@v4
       with:
         name: ebw-etoforms-gtk
-        path: ${{ github.workspace }}/Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Gtk/bin
+        path: ${{ github.workspace }}/artifacts/Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Gtk/bin

@@ -1,5 +1,6 @@
 [bB]in/
 [oO]bj/
+artifacts/
 *.bup
 *.mkv
 .vscode/**
