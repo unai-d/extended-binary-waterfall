@@ -23,7 +23,7 @@ jobs:
       with:
         dotnet-version: 10.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: cd src && dotnet restore
     - name: Build (CLI)
       run: cd src && dotnet build --no-restore Unai.ExtendedBinaryWaterfall.Cli
     - name: Build (EtoForms GTK GUI)
