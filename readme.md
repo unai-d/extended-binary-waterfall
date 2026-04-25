@@ -13,9 +13,12 @@ This program **reads computer files** as **raw audio and video streams**, result
 
 ## Download
 
+> [!NOTE]
+> You need to install the .NET Runtime on your PC before running the program.
+
 You can download Extended Binary Waterfall from the [Releases page](https://github.com/unai-d/extended-binary-waterfall/releases).
 
-Alternatively, if you have the .NET Runtime already installed on your machine, you might want to get the latest unstable builds from [GitHub Actions](https://github.com/unai-d/extended-binary-waterfall/actions).
+Alternatively, you might want to get the latest unstable builds from [GitHub Actions](https://github.com/unai-d/extended-binary-waterfall/actions).
 
 ## Dependencies
 
