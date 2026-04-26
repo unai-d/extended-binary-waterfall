@@ -11,6 +11,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Eto.Platform.Gtk" Version="2.11.0" />
+		<!-- The following package is deprecated, but without it, `libgtk-3.0.dll` doesn't exist. -->
+		<PackageReference Include="GtkSharp.Dependencies" Version="1.1.0" />
 	</ItemGroup>
 	
 </Project>
