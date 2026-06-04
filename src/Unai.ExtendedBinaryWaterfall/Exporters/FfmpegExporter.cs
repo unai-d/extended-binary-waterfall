@@ -65,6 +65,7 @@ public class FfmpegExporter : IExporter
 
 			// format
 			// ======
+			Logger.Info("Creating AVFormatContext…");
 
 			{
 				AVFormatContext* fmtCtx = null;
@@ -79,6 +80,7 @@ public class FfmpegExporter : IExporter
 
 			// encoders
 			// ========
+			Logger.Info("Creating encoders…");
 
 			AVRational videoFps; videoFps.num = Generator.OutputFps; videoFps.den = 1;
 
@@ -290,7 +292,7 @@ public class FfmpegExporter : IExporter
 		ret = ffmpeg.av_frame_make_writable(_audioAvFrame);
 		FfmpegUtils.LogIfAvError(ret, "cannot make audio sample buffer writable");
 
-		_audioAvFrame->pts = (long)(_audioAvFrame->sample_rate * (_frameNum / (float)Generator.OutputFps));
+		_audioAvFrame->pts = (long)(_audioAvFrame->sample_rate * (_frameNum / (double)Generator.OutputFps));
 		_audioAvFrame->duration = Generator.AudioOutputSamplesPerFrame;
 
 		// TODO: move to init method
