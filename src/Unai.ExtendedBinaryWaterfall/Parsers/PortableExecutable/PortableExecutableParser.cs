@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Unai.ExtendedBinaryWaterfall.Parsers.GodotPck;
 
 namespace Unai.ExtendedBinaryWaterfall.Parsers.PortableExecutable;
 
@@ -37,7 +38,7 @@ public class PortableExecutableParser : IParser
 	{
 		using BinaryReader br = new(InputStream, Encoding.ASCII, true);
 
-		yield return new("DOS Header", 0, 0x40);
+		yield return new("DOS Header", 0, 0x40) { IconString = "🔶" };
 
 		var peDosHdrMagic = br.ReadString(2); // "MZ"
 		br.BaseStream.Position = 0x3c;
@@ -129,8 +130,20 @@ public class PortableExecutableParser : IParser
 			var sectLineNumCount = br.ReadUInt16();
 			var sectFlags = br.ReadUInt32();
 
-			Logger.Debug($"PE Section: {sectName} size {sectSize:X8} vaddr {sectVirtualAddr:X8} data {sectRawDataPtr:X8}:{sectRawDataSize:X8}");
+			Logger.Debug($"PE Section: {sectName,-12} size {sectSize:X8} vaddr {sectVirtualAddr:X8} data {sectRawDataPtr:X8}:{sectRawDataSize:X8}");
 			yield return new(sectName, (long)sectVirtualAddr, (long)sectSize);
+
+			// Special section handling.
+			switch (sectName)
+			{
+				case "pck":
+					Logger.Info("Detected embedded Godot pack archive (PCK). Parsing…");
+					foreach (var subfile in new GodotPckParser(InputStream, sectRawDataPtr).GetSubFiles())
+					{
+						yield return subfile;
+					}
+					break;
+			}
 
 			br.BaseStream.Position = sectOfs + 40;
 		}
