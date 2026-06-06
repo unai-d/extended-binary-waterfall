@@ -4,55 +4,50 @@ namespace Unai.ExtendedBinaryWaterfall;
 
 public class AudioFrameResizer<T>
 {
-	private T[] _outputBuffer = null;
-	private int _bufOfs = 0;
+	private T[] _buf = null;
+	private int _triggerLen = 0;
+	private int _bufPtr = 0;
 	
 	public int BufferLength
 	{
-		get => _outputBuffer.Length;
-		set => _outputBuffer = new T[value];
+		get => _buf?.Length ?? 0;
+		set => _buf = new T[value];
+	}
+	public int TriggerLength
+	{
+		get => _triggerLen;
+		set
+		{
+			ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, BufferLength, nameof(value));
+			_triggerLen = value;
+		}
 	}
 	public Action<T[]> OutputCallback { get; set; } = null;
 
 	public void Push(T[] input)
 	{
-		var newBufOfs = _bufOfs + input.Length;
-		if (newBufOfs >= BufferLength)
+		var availSpace = BufferLength - _bufPtr;
+		if (input.Length > availSpace)
 		{
-			int inputOfs = 0;
-			int outputOfs = _bufOfs;
-			while (inputOfs < input.Length)
-			{
-				int subBufSize = BufferLength - outputOfs;
-				if (inputOfs + subBufSize >= input.Length)
-				{
-					subBufSize = input.Length - inputOfs;
-				}
-				Logger.Trace($"Audio buffer rearrangement: {subBufSize} bytes, {inputOfs}–{inputOfs + subBufSize}/{input.Length} → {outputOfs}-{outputOfs + subBufSize}/{BufferLength}");
-				Array.Copy(input, inputOfs, _outputBuffer, outputOfs, subBufSize);
-				inputOfs += subBufSize;
-				outputOfs += subBufSize;
-				outputOfs %= BufferLength;
-
-				if (inputOfs < input.Length)
-				{
-					Logger.Trace($"Sending output buffer…");
-					OutputCallback?.Invoke(_outputBuffer);
-				}
-			}
-
-			_bufOfs = outputOfs;
-			if (_bufOfs > BufferLength)
-			{
-				Logger.Warning($"Buffer overrun {_bufOfs} > {BufferLength}");
-				_bufOfs %= BufferLength;
-			}
+			throw new InvalidOperationException();
 		}
-		else
+
+		Logger.Trace($"Audio buffer status before insert: used {_bufPtr,4}, free {availSpace,4}, total {BufferLength,4}");
+
+		Array.Copy(input, 0, _buf, _bufPtr, input.Length);
+		_bufPtr += input.Length;
+
+		Logger.Trace($"Audio buffer status after insert:  used {_bufPtr,4}, free {availSpace,4}, total {BufferLength,4}");
+		
+		while (_bufPtr >= TriggerLength)
 		{
-			Array.Copy(input, 0, _outputBuffer, _bufOfs, input.Length);
-			_bufOfs += input.Length;
+			OutputCallback?.Invoke(_buf[0..TriggerLength]);
+
+			Array.Copy(_buf, TriggerLength, _buf, 0, BufferLength - TriggerLength);
+			
+			_bufPtr -= TriggerLength;
+			
+			Logger.Trace($"Audio buffer status after trigger: used {_bufPtr,-4}, free {availSpace,-4}, total {BufferLength,-4}");
 		}
-		Logger.Trace($"audio buf status: filled {_bufOfs,4}/{BufferLength,4} {BufferLength - _bufOfs} bytes left");
 	}
 }
