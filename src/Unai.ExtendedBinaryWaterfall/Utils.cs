@@ -48,7 +48,8 @@ public static class Utils
 			".htm" or ".html" or
 			".xml" or
 			".sql" or
-			".log"
+			".log" or
+			".json"
 				=> "🖹",
 			".wav" or
 			".mp3" or ".mp2" or ".mp1" or
@@ -61,7 +62,8 @@ public static class Utils
 			".3gp" or ".3gpp" or
 			".mov" or
 			".mkv" or
-			".mpg" or ".mpeg" or ".vob"
+			".mpg" or ".mpeg" or ".vob" or
+			".ogv"
 				=> "🎞️",
 			".ufont" or
 			".ttf" or
