@@ -147,7 +147,8 @@ public class FfmpegExporter : IExporter
 			_audioStream = ffmpeg.avformat_new_stream(_fmtCtx, null);
 			if (_videoStream == null) Logger.Error("cannot allocate audio output stream");
 			_audioStream->index = (int)(_fmtCtx->nb_streams - 1);
-			_audioStream->time_base = FfmpegUtils.GetRational(1, _audioCtx->sample_rate);
+			_audioStream->time_base.num = _audioCtx->time_base.num;
+			_audioStream->time_base.den = _audioCtx->time_base.den;
 			
 			ret = ffmpeg.avcodec_parameters_from_context(_audioStream->codecpar, _audioCtx);
 			FfmpegUtils.LogIfAvError(ret, "cannot set audio codec params from codec context");
@@ -197,7 +198,7 @@ public class FfmpegExporter : IExporter
 			ffmpeg.av_channel_layout_copy(&_audioAvFrame->ch_layout, &_audioCtx->ch_layout);
 			_audioAvFrame->sample_rate = _audioCtx->sample_rate;
 			_audioAvFrame->nb_samples = _audioCtx->frame_size;
-			_audioAvFrame->ch_layout.nb_channels = 2;
+			_audioAvFrame->ch_layout.nb_channels = Generator.AudioOutputChannelCount;
 			_audioAvFrame->ch_layout.u.mask = 3;
 			_audioAvFrame->time_base.num = _audioCtx->time_base.num;
 			_audioAvFrame->time_base.den = _audioCtx->time_base.den;
@@ -209,7 +210,8 @@ public class FfmpegExporter : IExporter
 
 			ret = ffmpeg.av_frame_get_buffer(_audioAvFrame, 0);
 			FfmpegUtils.LogIfAvError(ret, "cannot allocate audio sample buffer");
-			_audioQueue.BufferLength = _audioAvFrame->nb_samples * _audioAvFrame->ch_layout.nb_channels;
+			_audioQueue.TriggerLength = _audioAvFrame->nb_samples * _audioAvFrame->ch_layout.nb_channels;
+			_audioQueue.BufferLength = _audioQueue.TriggerLength * 4;
 			_audioQueue.OutputCallback = (buf) =>
 			{
 				float* ab0 = (float*)_audioAvFrame->data[0];
@@ -219,7 +221,15 @@ public class FfmpegExporter : IExporter
 					ab0[i] = buf[i * 2];
 					ab1[i] = buf[i * 2 + 1];
 				}
+
 				DoEncode(_audioCtx, _audioStream, _audioAvFrame, _audioAvPacket);
+
+				// if (_audioAvFrame->pts != _lastAudioPts + 1024)
+				// {
+				// 	Logger.Warning($"Audio PTS didn't advance normally: {_lastAudioPts} → {_audioAvFrame->pts}");
+				// }
+				// _lastAudioPts = _audioAvFrame->pts;
+				// _currentAudioPts += _audioAvFrame->nb_samples;
 			};
 
 			Logger.Debug($"video original linesize = {_videoAvFramePre->linesize[0]} {_videoAvFramePre->linesize[1]}");
@@ -232,6 +242,27 @@ public class FfmpegExporter : IExporter
 			_audioAvPacket = ffmpeg.av_packet_alloc();
 
 			ffmpeg.av_dump_format(_fmtCtx, 0, Generator.OutputFilePath ?? "pipe:", 1);
+
+			// swsctx
+			// ======
+
+			if (_swsCtx == null)
+			{
+				_swsCtx = ffmpeg.sws_getContext(Generator.OutputVideoWidth, Generator.OutputVideoHeight, (AVPixelFormat)_videoAvFramePre->format, _videoAvFrame->width, _videoAvFrame->height, (AVPixelFormat)_videoAvFrame->format, (int)SwsFlags.SWS_BILINEAR, null, null, null);
+				if (_swsCtx == null)
+				{
+					Logger.Error("cannot initialize sws context");
+				}
+			}
+			// TODO: move to init method
+			if (_swsCtx == null)
+			{
+				_swsCtx = ffmpeg.sws_getContext(Generator.OutputVideoWidth, Generator.OutputVideoHeight, (AVPixelFormat)_videoAvFramePre->format, _videoAvFrame->width, _videoAvFrame->height, (AVPixelFormat)_videoAvFrame->format, (int)SwsFlags.SWS_BILINEAR, null, null, null);
+				if (_swsCtx == null)
+				{
+					Logger.Error("cannot initialize sws context");
+				}
+			}
 		}
 		_init = true;
 	}
@@ -244,6 +275,8 @@ public class FfmpegExporter : IExporter
 
 		ret = ffmpeg.avcodec_send_frame(cCtx, frame);
 		FfmpegUtils.LogIfAvError(ret, "cannot send frame to encoder");
+
+		if (frame != null) Logger.Debug($"Sent AVFrame to encoder: stream #{stream->index}, PTS {frame->pts}, duration {frame->duration}, timebase {frame->time_base.num}/{frame->time_base.den}.");
 
 		while (ret >= 0)
 		{
@@ -292,19 +325,6 @@ public class FfmpegExporter : IExporter
 		ret = ffmpeg.av_frame_make_writable(_audioAvFrame);
 		FfmpegUtils.LogIfAvError(ret, "cannot make audio sample buffer writable");
 
-		_audioAvFrame->pts = (long)(_audioAvFrame->sample_rate * (_frameNum / (double)Generator.OutputFps));
-		_audioAvFrame->duration = Generator.AudioOutputSamplesPerFrame;
-
-		// TODO: move to init method
-		if (_swsCtx == null)
-		{
-			_swsCtx = ffmpeg.sws_getContext(videoFrame.Width, videoFrame.Height, (AVPixelFormat)_videoAvFramePre->format, videoFrame.Width, videoFrame.Height, (AVPixelFormat)_videoAvFrame->format, (int)SwsFlags.SWS_BILINEAR, null, null, null);
-			if (_swsCtx == null)
-			{
-				Logger.Error("cannot initialize sws context");
-			}
-		}
-
 		if (_swsCtx != null)
 		{
 			var pixelData = new byte[videoFrame.Width * videoFrame.Height * 4];
@@ -339,12 +359,14 @@ public class FfmpegExporter : IExporter
 		_videoAvFrame->duration = 1;
 		DoEncode(_videoCtx, _videoStream, _videoAvFrame, _videoAvPacket);
 
+		//_audioAvFrame->pts = (long)Math.Round(_audioAvFrame->sample_rate * (_frameNum / (double)Generator.OutputFps));
+		//_audioAvFrame->pts = (long)(_audioAvFrame->nb_samples * (_audioAvFrame->pts / (double)Generator.AudioOutputSamplesPerFramePerChannel));
+		//_audioAvFrame->pts = _currentAudioPts;
+		_audioAvFrame->pts = (long)(_frameNum * Generator.AudioOutputSamplesPerFramePerChannel / (double)_audioAvFrame->nb_samples) * _audioAvFrame->nb_samples;
+		_audioAvFrame->duration = _audioAvFrame->nb_samples;
 		_audioQueue.Push(audioFrame.ToArray());
 
-		if (_frameNum % 10 == 0)
-		{
-			Logger.Trace($"frame {_frameNum}, ts {_frameNum / Generator.OutputFps}, framegen speed {(int)(1/delta)} fps\x1b[K\x1b[G");
-		}
+		Logger.Trace($"Encoded: frame {_frameNum}, audio PTS {_audioAvFrame->pts}, video PTS {_videoAvFrame->pts}, framegen speed {(int)(1/delta)} FPS");
 
 		_frameNum++;
 	}
