@@ -33,9 +33,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ebw-cli
-        path: ${{ github.workspace }}/artifacts/Unai.ExtendedBinaryWaterfall.Cli/bin
+        path: ${{ github.workspace }}/artifacts/bin/Unai.ExtendedBinaryWaterfall.Cli/debug
     - name: Upload artifact (EtoForms GTK GUI)
       uses: actions/upload-artifact@v4
       with:
         name: ebw-etoforms-gtk
-        path: ${{ github.workspace }}/artifacts/Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Gtk/bin
+        path: ${{ github.workspace }}/artifacts/bin/Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Gtk/debug
