@@ -34,7 +34,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.RlImGui.Exporters
 			var pixelData = new byte[videoFrame.Width * videoFrame.Height * 4];
 			videoFrame.CopyPixelDataTo(pixelData);
 
-			ref var image = ref Program._viewportPanel._image;
+			ref var image = ref Program._uiViewportPanel._image;
 
 			unsafe
 			{
@@ -71,22 +71,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.RlImGui.Exporters
 				}
 			}
 
-			Program._viewportPanel._imageHasChanged = true;
-
-			// var bitmap = new Bitmap(videoFrame.Width, videoFrame.Height, PixelFormat.Format32bppRgba);
-
-			// using var bitmapData = bitmap.Lock();
-			// bitmapData.SetPixels(ConvertToEtoColor(pixelData));
-
-			// _mainForm._uiViewport.Image = bitmap;
+			Program._uiViewportPanel._imageHasChanged = true;
 		}
-
-		// private static IEnumerable<Eto.Drawing.Color> ConvertToEtoColor(byte[] pixelData)
-		// {
-		// 	for (int i = 0; i < pixelData.Length; i += 4)
-		// 	{
-		// 		yield return Eto.Drawing.Color.FromArgb(pixelData[i], pixelData[i + 1], pixelData[i + 2]);
-		// 	}
-		// }
 	}
 }
