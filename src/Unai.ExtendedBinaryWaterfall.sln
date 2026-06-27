@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unai.ExtendedBinaryWaterfal
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Wpf", "Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Wpf\Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Wpf.csproj", "{D8395E55-11F3-439A-B507-5B31ED5FB94E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unai.ExtendedBinaryWaterfall.Gui.RlImGui", "Unai.ExtendedBinaryWaterfall.Gui.RlImGui\Unai.ExtendedBinaryWaterfall.Gui.RlImGui.csproj", "{B993046E-F6DD-4403-8037-A5063DD9EB0D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{D8395E55-11F3-439A-B507-5B31ED5FB94E}.Release|x64.Build.0 = Release|Any CPU
 		{D8395E55-11F3-439A-B507-5B31ED5FB94E}.Release|x86.ActiveCfg = Release|Any CPU
 		{D8395E55-11F3-439A-B507-5B31ED5FB94E}.Release|x86.Build.0 = Release|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Debug|x64.Build.0 = Debug|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Debug|x86.Build.0 = Debug|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Release|x64.ActiveCfg = Release|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Release|x64.Build.0 = Release|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Release|x86.ActiveCfg = Release|Any CPU
+		{B993046E-F6DD-4403-8037-A5063DD9EB0D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
