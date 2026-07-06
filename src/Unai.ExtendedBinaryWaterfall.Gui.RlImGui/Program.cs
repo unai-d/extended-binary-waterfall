@@ -57,9 +57,17 @@ class Program
 			{
 				if (ImGui.MenuItem("Open..."))
 				{
-					_generator.InputFilePath = "/usr/bin/ffmpeg";
-					_generator.Initialize();
-					_generator.GenerateFrame(0);
+					var openFileDialog = new NativeFileDialogNET.NativeFileDialog()
+						.SelectFile();
+					
+					var dialogResult = openFileDialog.Open(out string selectedFile);
+
+					if (dialogResult == NativeFileDialogNET.DialogResult.Okay)
+					{
+						_generator.InputFilePath = selectedFile;
+						_generator.Initialize();
+						_generator.GenerateFrame(0);
+					}
 				}
 
 				if (ImGui.MenuItem("Exit"))
