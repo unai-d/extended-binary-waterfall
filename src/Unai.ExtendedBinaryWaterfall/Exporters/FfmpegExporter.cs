@@ -39,7 +39,7 @@ public class FfmpegExporter : IExporter
 	// [CliParameter("Output Video File Path", "output", 'o')]
 	// public string OutputPath { get; set; } = null;
 	[CliParameter("Output Video Bitrate", "output-bitrate")]
-	public uint OutputVideoBitRate { get; set; } = 9_000_000;
+	public int OutputVideoBitrate { get; set; } = 9_000_000;
 
 	#endregion
 
@@ -96,7 +96,7 @@ public class FfmpegExporter : IExporter
 			_videoCtx->time_base.den = videoFps.num;
 			_videoCtx->framerate.num = videoFps.num;
 			_videoCtx->framerate.den = videoFps.den;
-			_videoCtx->bit_rate = OutputVideoBitRate;
+			_videoCtx->bit_rate = OutputVideoBitrate;
 			// _videoCtx->thread_count = Environment.ProcessorCount / 2;
 			// Console.Error.WriteLine($"using {_videoCtx->thread_count} threads");
 			if ((_fmtCtx->oformat->flags & ffmpeg.AVFMT_GLOBALHEADER) != 0)
@@ -276,7 +276,10 @@ public class FfmpegExporter : IExporter
 		ret = ffmpeg.avcodec_send_frame(cCtx, frame);
 		FfmpegUtils.LogIfAvError(ret, "cannot send frame to encoder");
 
-		if (frame != null) Logger.Debug($"Sent AVFrame to encoder: stream #{stream->index}, PTS {frame->pts}, duration {frame->duration}, timebase {frame->time_base.num}/{frame->time_base.den}.");
+		if (frame != null)
+		{
+			Logger.Trace($"Sent AVFrame to encoder: stream #{stream->index}, PTS {frame->pts}, duration {frame->duration}, timebase {frame->time_base.num}/{frame->time_base.den}.");
+		}
 
 		while (ret >= 0)
 		{
