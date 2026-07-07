@@ -303,6 +303,7 @@ public class Generator
 
 				if (targetProp.DeclaringType.GetInterfaces().Contains(typeof(IExporter)))
 				{
+					Logger.Debug($"Setting property '{argKvp.Key}' from exporter '{ExporterId ?? "<default>"}' to value '{argKvp.Value}'…");
 					CliParameterAttribute.SetPropertyFromCliArgument(targetProp, Exporter, argKvp.Value);
 				}
 				else
