@@ -38,6 +38,10 @@ public class CliParameterAttribute : Attribute
 		{
 			targetProp.SetValue(targetObject, int.Parse(value));
 		}
+		else if (targetProp.PropertyType == typeof(long))
+		{
+			targetProp.SetValue(targetObject, long.Parse(value));
+		}
 		else if (targetProp.PropertyType.IsEnum)
 		{
 			var ok = Enum.TryParse(targetProp.PropertyType, value, true, out var pval);
@@ -59,7 +63,7 @@ public class CliParameterAttribute : Attribute
 		}
 		else
 		{
-			Logger.Error($"Cannot convert string representation of value of property `{targetProp.Name}` because it is not implemented yet.");
+			Logger.Error($"Cannot convert string representation of value of property `{targetProp.Name}` to {targetProp.PropertyType} because it is not implemented yet.");
 		}
 		return true;
 	}
