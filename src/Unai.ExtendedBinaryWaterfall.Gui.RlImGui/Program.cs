@@ -25,6 +25,16 @@ class Program
 	internal static Generator _generator = new();
 	static readonly string _nullParserId = typeof(CustomParser).GetCustomAttribute<ParserAttribute>().Id;
 
+	private static bool IsWellKnownFont(string filePath)
+	{
+		var fileName = Path.GetFileName(filePath);
+		return fileName switch
+		{
+			"DejaVuSans.ttf" or "SegoeUI.ttf" or "Arial.ttf" => true,
+			_ => false
+		};
+	}
+
 	static void InitializeFonts()
 	{
 		string[] searchPaths = Environment.OSVersion.Platform switch
@@ -39,7 +49,7 @@ class Program
 		rlImGui.SetupUserFonts += (ImGuiIOPtr imGuiIo) =>
 		{
 			var fontFiles = Directory.GetFiles(searchPaths[0], "*.*", SearchOption.AllDirectories); // TODO: Iterate array!!
-			var fontPaths = fontFiles.Where(fp => fp.EndsWith("DejaVuSans.ttf"));
+			var fontPaths = fontFiles.Where(IsWellKnownFont);
 			foreach (var fontPath in fontPaths)
 			{
 				Logger.Debug($"Selected font for ImGUI: '{fontPath}'");
