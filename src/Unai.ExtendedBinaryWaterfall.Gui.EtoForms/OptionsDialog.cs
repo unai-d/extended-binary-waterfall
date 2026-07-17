@@ -4,6 +4,7 @@ using System.Reflection;
 using Eto.Drawing;
 using Eto.Forms;
 using Unai.ExtendedBinaryWaterfall.Parsers;
+using Unai.ExtendedBinaryWaterfall.Attributes;
 
 namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms;
 
