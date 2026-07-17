@@ -65,7 +65,11 @@ public static class Extensions
 		int hash = 0x91f_c28a;
 		if (brush != null) hash ^= brush.GetHashCode();
 		if (pen != null) hash ^= pen.StrokeFill.GetHashCode();
-		foreach (var c in text) hash ^= c * 0xc10_48f1;
+		foreach (var c in text)
+		{
+			hash <<= 2;
+			hash ^= c * 0xc10_48f1;
+		}
 		hash ^= 0x183 * (int)textOptions.Font.Size;
 
 		if (!_textRenderCache.TryGetValue(hash, out var cachedTextRender))
