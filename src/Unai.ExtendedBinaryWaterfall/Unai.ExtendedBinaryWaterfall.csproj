@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="MinVer" Version="6.0.0">
+		<PackageReference Include="MinVer" Version="7.0.0">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
@@ -19,13 +19,13 @@
 		<PackageReference Include="SixLabors.Fonts" Version="2.1.3" />
 		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
 		<!-- Used by format parsers -->
-		<PackageReference Include="PeNet" Version="4.1.1" />
+		<PackageReference Include="PeNet" Version="6.1.2" />
 		<!-- Used by SdlExporter -->
 		<PackageReference Include="SDL-Sharp" Version="2.2.5" />
 		<PackageReference Include="SDL-Sharp-DLL" Version="2.1.4" />
 		<!-- Used by FfmpegExporter -->
-		<PackageReference Include="FFmpeg.AutoGen" Version="8.0.0" />
-		<PackageReference Include="Spectre.Console" Version="0.54.0" />
+		<PackageReference Include="FFmpeg.AutoGen" Version="8.1.0" />
+		<PackageReference Include="Spectre.Console" Version="0.57.2" />
 	</ItemGroup>
 
 </Project>
