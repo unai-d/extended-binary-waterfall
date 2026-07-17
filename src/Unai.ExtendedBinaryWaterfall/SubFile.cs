@@ -1,4 +1,4 @@
-using SixLabors.ImageSharp;
+using Unai.ExtendedBinaryWaterfall.Renderers;
 
 namespace Unai.ExtendedBinaryWaterfall;
 
@@ -11,7 +11,7 @@ public class SubFile(string path, long startOffset, long length)
 	public long EndOffset { get => StartOffset + Length; set => Length = value - StartOffset; }
 	public string Description { get; set; } = null;
 	public string IconString { get; set; } = null;
-	public Image Icon { get; set; } = null;
+	public ICanvas Icon { get; set; } = null;
 
 	public string FileName => System.IO.Path.GetFileName(Path);
 	public string FileDirectory => System.IO.Path.GetDirectoryName(Path);

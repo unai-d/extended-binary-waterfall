@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using Eto.Drawing;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using Unai.ExtendedBinaryWaterfall.Exporters;
+using Unai.ExtendedBinaryWaterfall.Renderers;
 
 namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Exporters
 {
@@ -23,15 +22,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Exporters
 			
 		}
 
-		public void PushNewFrame(SixLabors.ImageSharp.Image videoFrame, AudioBuffer audioFrame, double delta = 0.04)
-		{
-			if (videoFrame is Image<Rgba32> videoFrameRgba32)
-			{
-				PushNewFrame(videoFrameRgba32, audioFrame, delta);
-			}
-		}
-
-		public void PushNewFrame(Image<Rgba32> videoFrame, AudioBuffer audioFrame, double delta = 0.04)
+		public void PushNewFrame(ICanvas videoFrame, AudioBuffer audioFrame, double delta = 0.04)
 		{
 			var pixelData = new byte[videoFrame.Width * videoFrame.Height * 4];
 			videoFrame.CopyPixelDataTo(pixelData);
@@ -44,11 +35,11 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.EtoForms.Exporters
 			_mainForm._uiViewport.Image = bitmap;
 		}
 
-		private static IEnumerable<Eto.Drawing.Color> ConvertToEtoColor(byte[] pixelData)
+		private static IEnumerable<Color> ConvertToEtoColor(byte[] pixelData)
 		{
 			for (int i = 0; i < pixelData.Length; i += 4)
 			{
-				yield return Eto.Drawing.Color.FromArgb(pixelData[i], pixelData[i + 1], pixelData[i + 2]);
+				yield return Color.FromArgb(pixelData[i], pixelData[i + 1], pixelData[i + 2]);
 			}
 		}
 	}

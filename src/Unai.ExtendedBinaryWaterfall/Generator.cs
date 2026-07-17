@@ -1,19 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Reflection;
 using System.Text;
-using SixLabors.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Processing.Processors.Transforms;
 using Unai.ExtendedBinaryWaterfall.Exporters;
 using Unai.ExtendedBinaryWaterfall.Parsers;
+using Unai.ExtendedBinaryWaterfall.Renderers;
+using Unai.ExtendedBinaryWaterfall.Renderers.ImageSharp;
 
 namespace Unai.ExtendedBinaryWaterfall;
 
@@ -23,6 +19,7 @@ public class Generator
 
 	public FileStream InputFileStream { get; set; }
 	public Stream InputAuxiliaryFileStream { get; set; }
+	public IRenderer Renderer { get; set; } = new ImageSharpRenderer();
 	public IParser Parser { get; set; }
 	public IExporter Exporter { get; set; }
 	public long TotalFrames { get; internal set; }
@@ -46,29 +43,14 @@ public class Generator
 
 	#region Generator State Machine Variables
 
-	private Image<Rgba32> _frameContent = null;
-	private Image<Rgba32> _viewportFramebuf = null;
+	private ICanvas _frameContent = null;
+	private ICanvas _viewportFramebuf = null;
 	private AudioBuffer _inputAudioBuffer = null;
 	private AudioBuffer _outputAudioBuffer = null;
 	private int _videoFrameX1, _videoFrameX2, _videoFrameY1, _videoFrameY2;
 	internal bool _exitRequested = false;
 	private float _subfileWindowIndex = 0f;
-
-	#endregion
-
-	#region ImageSharp-specific
-
-	private FontCollection _fontCollection;
-	private FontFamily _fontFamily, _emojiFontFamily;
-	private Font _font16, _font24, _font32, _font48;
-	private readonly DrawingOptions _drawOpts = new()
-	{
-		GraphicsOptions = new()
-		{
-			Antialias = true,
-			AntialiasSubpixelDepth = 0, // coalesced value
-		}
-	};
+	private IFont _font16, _font24, _font32, _font48;
 
 	#endregion
 	
@@ -92,7 +74,7 @@ public class Generator
 	[CliParameter("Font Name", "font", "Set the font name to render the on-screen text")]
 	public string FontName { get; set; } = null;
 	[CliParameter("Font Antialiasing", "font-antialiasing")]
-	public bool FontAntialiasing { get => _drawOpts.GraphicsOptions.Antialias; set => _drawOpts.GraphicsOptions.Antialias = value; }
+	public bool FontAntialiasing { get; set; }
 
 	#endregion
 
@@ -185,7 +167,14 @@ public class Generator
 
 		InitializeExporter();
 
-		InitializeFonts();
+		Logger.Info("Initializing renderer…");
+
+		Renderer.Initialize();
+
+		_font16 = Renderer.CreateFont("unifont", 16);
+		_font24 = Renderer.CreateFont("unifont", 24);
+		_font32 = Renderer.CreateFont("unifont", 32);
+		_font48 = Renderer.CreateFont("unifont", 48);
 
 		Logger.Info("Preparing audio/video generation…");
 
@@ -193,13 +182,13 @@ public class Generator
 
 		_inputAudioBuffer = new(AudioInputSamplesPerFramePerChannel, AudioInputChannelCount);
 		_outputAudioBuffer = new(AudioOutputSamplesPerFramePerChannel, AudioOutputChannelCount);
-		if (_drawOpts.GraphicsOptions.Antialias)
-		{
-			if (_drawOpts.GraphicsOptions.AntialiasSubpixelDepth < 0)
-			{
-				_drawOpts.GraphicsOptions.AntialiasSubpixelDepth = 1;
-			}
-		}
+		// if (_drawOpts.GraphicsOptions.Antialias)
+		// {
+		// 	if (_drawOpts.GraphicsOptions.AntialiasSubpixelDepth < 0)
+		// 	{
+		// 		_drawOpts.GraphicsOptions.AntialiasSubpixelDepth = 1;
+		// 	}
+		// }
 
 		LogGeneratorStatus();
 
@@ -209,52 +198,14 @@ public class Generator
 	[Conditional("DEBUG")]
 	private void LogGeneratorStatus()
 	{
-		Logger.Debug($"Selected parser: {Parser?.GetType().GetCustomAttribute<ParserAttribute>()?.Name ?? "<null>"}");
-		Logger.Debug($"Selected exporter: {Exporter?.GetType().GetCustomAttribute<ExporterAttribute>()?.Name ?? "<null>"}");
-		Logger.Debug($"Selected font: {_fontFamily.Name ?? "<null>"}");
+		Logger.Debug($"Selected parser: {Parser?.GetType().GetCustomAttribute<ParserAttribute>()?.Name ?? Parser?.GetType().Name ?? "<null>"}");
+		Logger.Debug($"Selected exporter: {Exporter?.GetType().GetCustomAttribute<ExporterAttribute>()?.Name ?? Exporter?.GetType().Name ?? "<null>"}");
+		Logger.Debug($"Selected renderer: {Renderer?.GetType().GetCustomAttribute<RendererAttribute>()?.Name ?? Renderer?.GetType().Name ?? "<null>"}");
 		Logger.Debug($"Read speed: {InputBytesPerFrame} bytes/frame ({InputBytesPerSecond} bytes/second)");
 		Logger.Debug($"Waterfall duration will be around {TimeSpan.FromSeconds(InputFileStream.Length / InputBytesPerSecond)}.");
 		Logger.Debug($"Video input:  {WaterfallWidth}×{WaterfallHeight}");
 		Logger.Debug($"Audio input:  {AudioInputBytesPerFrame}bpf {AudioInputSamplesPerFrame}spf → {AudioInputSampleRate}Hz {AudioInputChannelCount}ch {8 * AudioInputSampleFormat.GetByteSize()}-bit");
 		Logger.Debug($"Audio output: {AudioOutputBytesPerFrame}bpf {AudioOutputSamplesPerFrame}spf → {AudioOutputSampleRate}Hz {AudioOutputChannelCount}ch {8 * AudioOutputSampleFormat.GetByteSize()}-bit");
-	}
-
-	private void InitializeFonts()
-	{
-		Logger.Info("Loading fonts…");
-		Logger.Debug($"Requested font: '{FontName}'.");
-
-		if (_fontCollection == null)
-		{
-			_fontCollection = new();
-			_fontCollection.AddSystemFonts();
-		}
-
-		if (FontName != null)
-		{
-			// Try getting the font by the font name specified by the user
-			if (!_fontCollection.TryGet(FontName, out _fontFamily))
-			{
-				Logger.Error($"Cannot find font '{FontName}'.");
-			}
-		}
-
-		if (_fontFamily.Name == null)
-		{
-			if (_fontCollection.TryGet("unifont", out _fontFamily))
-			{
-				_fontCollection.TryGet("unifont upper", out _emojiFontFamily);
-			}
-			else
-			{
-				_fontFamily = _fontCollection.Get(Environment.OSVersion.Platform == PlatformID.Win32NT ? "Consolas" : "Source Code Pro");
-			}
-		}
-
-		_font48 = _fontFamily.CreateFont(48f, FontStyle.Regular);
-		_font32 = _fontFamily.CreateFont(32f, FontStyle.Regular);
-		_font24 = _fontFamily.CreateFont(24f, FontStyle.Regular);
-		_font16 = _fontFamily.CreateFont(16f, FontStyle.Regular);
 	}
 
 	private void InitializeExporter()
@@ -410,7 +361,7 @@ public class Generator
 	{
 		if (force || _frameContent == null || _frameContent.Width != OutputVideoWidth || _frameContent.Height != OutputVideoHeight)
 		{
-			_frameContent = new(OutputVideoWidth, OutputVideoHeight);
+			_frameContent = Renderer.CreateCanvas(OutputVideoWidth, OutputVideoHeight);
 			var pixelCount = OutputVideoWidth * OutputVideoHeight;
 
 			WaterfallScaledWidth = (int)(WaterfallWidth * (pixelCount / 691200f));
@@ -451,21 +402,20 @@ public class Generator
 
 		for (long frameNumber = 0; frameNumber < totalIntroFrames; frameNumber++)
 		{
-			_frameContent.Mutate(ctx => ctx.Clear(new Rgba32(16, 16, 16, 255)));
-
-			_frameContent.Mutate(av => av
-				.DrawText(new RichTextOptions(_font48)
+			_frameContent
+				.Clear(Color.FromArgb(16, 16, 16))
+				.DrawText(_font48, new()
 				{
-					Origin = new Vector2(OutputVideoWidth / 2, OutputVideoHeight / 2),
+					Origin = new(OutputVideoWidth / 2, OutputVideoHeight / 2),
 					HorizontalAlignment = HorizontalAlignment.Center,
 					TextAlignment = TextAlignment.Center,
 				}, "DISCLAIMER\n\nThis video contains\nhigh speed flashing lights\nand loud noises", Color.White)
-				.DrawText(new RichTextOptions(_font24)
+				.DrawText(_font24, new()
 				{
-					Origin = new Vector2(OutputVideoWidth / 2, OutputVideoHeight - 128),
+					Origin = new(OutputVideoWidth / 2, OutputVideoHeight - 128),
 					HorizontalAlignment = HorizontalAlignment.Center,
 				}, $"Starting in {(totalIntroFrames - frameNumber) / (float)OutputFps:N1} seconds…", Color.White)
-				.DrawProgressBar(frameNumber / (float)totalIntroFrames, (int)(OutputVideoWidth * 0.3), (int)(OutputVideoWidth * 0.7), OutputVideoHeight - 64));
+				.DrawProgressBar(frameNumber / (float)totalIntroFrames, (int)(OutputVideoWidth * 0.3), (int)(OutputVideoWidth * 0.7), OutputVideoHeight - 64);
 
 			Exporter.PushNewFrame(_frameContent, _outputAudioBuffer, _timer.Elapsed.TotalSeconds);
 			_timer.Restart();
@@ -544,19 +494,20 @@ public class Generator
 
 		// Get video data.
 
-		_viewportFramebuf = Image.LoadPixelData<Rgba32>(currentVideoBuffer, WaterfallWidth, WaterfallHeight);
-		_viewportFramebuf.ProcessPixelRows(pa =>
-		{
-			for (int y = 0; y < pa.Height; y++)
-			{
-				var row = pa.GetRowSpan(y);
-				for (int x = 0; x < row.Length; x++)
-				{
-					row[x].A = 255;
-				}
-			}
-		});
-		_viewportFramebuf.Mutate(ctx => ctx.Flip(FlipMode.Vertical).Resize(WaterfallScaledWidth, WaterfallScaledHeight, new NearestNeighborResampler()));
+		_viewportFramebuf = Renderer.CreateCanvas(currentVideoBuffer, WaterfallWidth, WaterfallHeight);
+		// TODO: Remove alpha channel (make image opaque).
+		// _viewportFramebuf.ProcessPixelRows(pa =>
+		// {
+		// 	for (int y = 0; y < pa.Height; y++)
+		// 	{
+		// 		var row = pa.GetRowSpan(y);
+		// 		for (int x = 0; x < row.Length; x++)
+		// 		{
+		// 			row[x].A = 255;
+		// 		}
+		// 	}
+		// });
+		_viewportFramebuf.FlipVertical().Resize(WaterfallScaledWidth, WaterfallScaledHeight);
 
 		// Get audio data.
 
@@ -580,11 +531,11 @@ public class Generator
 
 		// Do render.
 
-		_frameContent.Mutate(ctx =>
+		//_frameContent.Mutate(ctx =>
 		{
 			// 1. Clear frame
 
-			ctx.Clear(new Rgba32(16, 16, 16, 255));
+			_frameContent.Clear(Color.FromArgb(16, 16, 16));
 
 			// 2. Draw subfile listing
 
@@ -611,35 +562,37 @@ public class Generator
 
 				bool isMainSubfile = sfi == (currentSubfile?.key ?? -1);
 
-				ctx.DrawText(_drawOpts, new RichTextOptions(_font32)
-				{
-					Origin = new Vector2(subfileX1, subfileY),
-					VerticalAlignment = VerticalAlignment.Center,
-				}, isMainSubfile ? "▶" : " ", new SolidBrush(Color.White), null)
-				.DrawTextAndCache(_drawOpts, new RichTextOptions(_font32)
-				{
-					Origin = new Vector2(subfileX1 + 32, subfileY),
-					VerticalAlignment = VerticalAlignment.Center,
-					FallbackFontFamilies = _emojiFontFamily.Name != null ? [_emojiFontFamily] : null,
-				}, $"{Utils.GetFileTypeEmoji(subfile)} {Utils.TruncateString(subfile.FileName, 40)}", new SolidBrush(Color.White), null)
-				.DrawTextAndCache(_drawOpts, new RichTextOptions(_font32)
-				{
-					Origin = new Vector2(subfileX2, subfileY),
-					HorizontalAlignment = HorizontalAlignment.Right,
-					VerticalAlignment = VerticalAlignment.Center,
-				}, Utils.ToByteSizeString(subfile.Length), new SolidBrush(Color.DimGray), null);
+				_frameContent
+					.DrawText(_font32, new()
+					{
+						Origin = new(subfileX1, subfileY),
+						VerticalAlignment = VerticalAlignment.Center,
+					}, isMainSubfile ? "▶" : " ", Color.White)
+					.DrawText(_font32, new()
+					{
+						Origin = new(subfileX1 + 32, subfileY),
+						VerticalAlignment = VerticalAlignment.Center,
+						// FallbackFontFamilies = _emojiFontFamily.Name != null ? [_emojiFontFamily] : null, // TODO
+					}, $"{Utils.GetFileTypeEmoji(subfile)} {Utils.TruncateString(subfile.FileName, 40)}", Color.White)
+					.DrawText(_font32, new()
+					{
+						Origin = new(subfileX2, subfileY),
+						HorizontalAlignment = HorizontalAlignment.Right,
+						VerticalAlignment = VerticalAlignment.Center,
+					}, Utils.ToByteSizeString(subfile.Length), Color.DimGray);
 
 				if (isMainSubfile)
 				{
 					float percentOfSubfile = (currentOffset - subfile.StartOffset) / (float)subfile.Length;
 
-					ctx.DrawText(_drawOpts, new RichTextOptions(_font16)
-					{
-						Origin = new PointF(subfileX1 + 48, subfileY + 20),
-						HorizontalAlignment = HorizontalAlignment.Center,
-						VerticalAlignment = VerticalAlignment.Center,
-					}, $"{(int)Math.Clamp(percentOfSubfile * 100, 0, 100)} %", new SolidBrush(Color.White), null)
-					.DrawProgressBar(percentOfSubfile, subfileX1 + 80, subfileX2, subfileY + 20);
+					_frameContent
+						.DrawText(_font16, new()
+						{
+							Origin = new(subfileX1 + 48, subfileY + 20),
+							HorizontalAlignment = HorizontalAlignment.Center,
+							VerticalAlignment = VerticalAlignment.Center,
+						}, $"{(int)Math.Clamp(percentOfSubfile * 100, 0, 100)} %", Color.White)
+						.DrawProgressBar(percentOfSubfile, subfileX1 + 80, subfileX2, subfileY + 20);
 				}
 
 				subfileY += subfileH;
@@ -647,81 +600,78 @@ public class Generator
 
 			// 3. Draw binary waterfall viewport
 
-			ctx.DrawImage(_viewportFramebuf, new Point(_videoFrameX1, _videoFrameY1), 1f)
-			.DrawText(new RichTextOptions(_font32)
-			{
-				Origin = new Vector2(32, (OutputVideoHeight / 2) + (playHeadRelPos * (WaterfallScaledHeight / WaterfallHeight))),
-				VerticalAlignment = VerticalAlignment.Center,
-			}, "▶", Color.White);
+			_frameContent
+				.DrawImage(new PointF(_videoFrameX1, _videoFrameY1), _viewportFramebuf)
+				.DrawText(_font32, new()
+				{
+					Origin = new(32, (OutputVideoHeight / 2) + (playHeadRelPos * (WaterfallScaledHeight / WaterfallHeight))),
+					VerticalAlignment = VerticalAlignment.Center,
+				}, "▶", Color.White);
 
 			// 4. Draw top-bottom gradients
 
 			float shadowY1 = (OutputVideoHeight / 2) - subfileH * 8.5f;
 			float shadowY2 = (OutputVideoHeight / 2) + subfileH * 6.5f;
 
-			ctx.Fill(
-				new LinearGradientBrush(
+			_frameContent
+				.FillRectangleGradient(
+					new RectangleF(0, shadowY1, OutputVideoWidth, subfileH * 2),
 					new PointF(0, shadowY1),
 					new PointF(0, shadowY1 + subfileH * 2),
-					GradientRepetitionMode.None,
-					new(0.5f, Color.FromRgba(16, 16, 16, 255)),
-					new(1, Color.FromRgba(16, 16, 16, 0))
-				),
-				new RectangleF(0, shadowY1, OutputVideoWidth, subfileH * 2)
-			)
-			.Fill(
-				new LinearGradientBrush(
+					new(0.5f, Color.FromArgb(255, 16, 16, 16)),
+					new(1, Color.FromArgb(0, 16, 16, 16))
+				)
+				.FillRectangleGradient(
+					new RectangleF(0, shadowY2, OutputVideoWidth, subfileH * 2),
 					new PointF(0, shadowY2),
 					new PointF(0, shadowY2 + subfileH * 2),
-					GradientRepetitionMode.None,
-					new(0, Color.FromRgba(16, 16, 16, 0)),
-					new(0.5f, Color.FromRgba(16, 16, 16, 255))
-				),
-				new RectangleF(0, shadowY2, OutputVideoWidth, subfileH * 2)
-			)
-			.DrawTextAndCache(new RichTextOptions(_font24)
-			{
-				Origin = new Vector2(subfileX1 + 40, 160),
-				VerticalAlignment = VerticalAlignment.Center,
-			}, Utils.TruncateString(currentSubfile?.value?.FileDirectory ?? string.Empty, 72), Color.DimGray);
+					new(0, Color.FromArgb(0, 16, 16, 16)),
+					new(0.5f, Color.FromArgb(255, 16, 16, 16))
+				)
+				.DrawText(_font24, new()
+				{
+					Origin = new(subfileX1 + 40, 160),
+					VerticalAlignment = VerticalAlignment.Center,
+				}, Utils.TruncateString(currentSubfile?.value?.FileDirectory ?? string.Empty, 72), Color.DimGray);
 
 			// 5. Draw Status and General Info
 
-			ctx.DrawTextAndCache(new RichTextOptions(_font24)
-			{
-				Origin = new Vector2(32, 32),
-			}, "A/V SETTINGS", Color.DimGray)
-			.DrawText(new(_font32)
-			{
-				Origin = new Vector2(32, 32 + 24),
-			}, _avSettingsString, Color.White)
-			.DrawTextAndCache(new RichTextOptions(_font24)
-			{
-				Origin = new Vector2(OutputVideoWidth - 32, 32),
-				HorizontalAlignment = HorizontalAlignment.Right,
-			}, "ABS. OFFSET", Color.DimGray)
-			.DrawText(new(_font32)
-			{
-				Origin = new Vector2(OutputVideoWidth - 32, 32 + 24),
-				HorizontalAlignment = HorizontalAlignment.Right,
-				TextAlignment = TextAlignment.End,
-			}, $"{currentOffset / 1048576f:N2} MiB\n0x{currentOffset:X8}", Color.White)
-			.DrawTextAndCache(new RichTextOptions(_font24)
-			{
-				Origin = new Vector2(OutputVideoWidth - 256, 32),
-				HorizontalAlignment = HorizontalAlignment.Right,
-			}, "BITRATE", Color.DimGray)
-			.DrawText(new(_font32)
-			{
-				Origin = new Vector2(OutputVideoWidth - 256, 32 + 24),
-				HorizontalAlignment = HorizontalAlignment.Right,
-			}, _readSpeedString, Color.White);
+			_frameContent
+				.DrawText(_font24, new()
+				{
+					Origin = new(32, 32),
+				}, "A/V SETTINGS", Color.DimGray)
+				.DrawText(_font32, new()
+				{
+					Origin = new(32, 32 + 24),
+				}, _avSettingsString, Color.White)
+				.DrawText(_font24, new()
+				{
+					Origin = new(OutputVideoWidth - 32, 32),
+					HorizontalAlignment = HorizontalAlignment.Right,
+				}, "ABS. OFFSET", Color.DimGray)
+				.DrawText(_font32, new()
+				{
+					Origin = new(OutputVideoWidth - 32, 32 + 24),
+					HorizontalAlignment = HorizontalAlignment.Right,
+					TextAlignment = TextAlignment.Right,
+				}, $"{currentOffset / 1048576f:N2} MiB\n0x{currentOffset:X8}", Color.White)
+				.DrawText(_font24, new()
+				{
+					Origin = new(OutputVideoWidth - 256, 32),
+					HorizontalAlignment = HorizontalAlignment.Right,
+				}, "BITRATE", Color.DimGray)
+				.DrawText(_font32, new()
+				{
+					Origin = new(OutputVideoWidth - 256, 32 + 24),
+					HorizontalAlignment = HorizontalAlignment.Right,
+				}, _readSpeedString, Color.White);
 
 			if (Author != null)
 			{
-				ctx.DrawTextAndCache(new(_font32)
+				_frameContent.DrawText(_font32, new()
 				{
-					Origin = new Vector2(OutputVideoWidth / 2, 32 + 24),
+					Origin = new(OutputVideoWidth / 2, 32 + 24),
 					VerticalAlignment = VerticalAlignment.Center,
 					HorizontalAlignment = HorizontalAlignment.Center,
 				}, Author, Color.White);
@@ -729,32 +679,33 @@ public class Generator
 
 			if (Title != null)
 			{
-				ctx.DrawTextAndCache(new RichTextOptions(_font24)
-				{
-					Origin = new Vector2(32, OutputVideoHeight - 64 - (Title.Contains('\n') ? 32 : 0)),
-					VerticalAlignment = VerticalAlignment.Bottom,
-				}, "TARGET", Color.DimGray)
-				.DrawTextAndCache(new(_font32)
-				{
-					Origin = new Vector2(32, OutputVideoHeight - 32),
-					VerticalAlignment = VerticalAlignment.Bottom,
-				}, Title, Color.White);
+				_frameContent
+					.DrawText(_font24, new()
+					{
+						Origin = new(32, OutputVideoHeight - 64 - (Title.Contains('\n') ? 32 : 0)),
+						VerticalAlignment = VerticalAlignment.Bottom,
+					}, "TARGET", Color.DimGray)
+					.DrawText(_font32, new()
+					{
+						Origin = new(32, OutputVideoHeight - 32),
+						VerticalAlignment = VerticalAlignment.Bottom,
+					}, Title, Color.White);
 			}
 
 			if (currentSubfile?.value?.Icon != null)
 			{
-				ctx.DrawImage(currentSubfile.value.Icon, new Point(OutputVideoWidth / 2, OutputVideoHeight - 128 - 32), 1f);
+				_frameContent.DrawImage(new Point(OutputVideoWidth / 2, OutputVideoHeight - 128 - 32), currentSubfile.value.Icon);
 			}
 
 			if (currentSubfile?.value?.Description != null)
 			{
-				ctx.DrawText(new(_font32)
+				_frameContent.DrawText(_font32, new()
 				{
-					Origin = new Vector2(OutputVideoWidth / 2 + 128 + 32, OutputVideoHeight - 32),
+					Origin = new(OutputVideoWidth / 2 + 128 + 32, OutputVideoHeight - 32),
 					VerticalAlignment = VerticalAlignment.Bottom,
 				}, currentSubfile.value.Description, Color.White);
 			}
-		});
+		}
 
 		Exporter.PushNewFrame(_frameContent, _outputAudioBuffer, _timer.Elapsed.TotalSeconds);
 		_timer.Restart();

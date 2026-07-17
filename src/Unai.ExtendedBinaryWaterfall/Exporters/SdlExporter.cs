@@ -3,8 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using SDL_Sharp;
 using SDL_Sharp.Loader;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using Unai.ExtendedBinaryWaterfall.Renderers;
 
 namespace Unai.ExtendedBinaryWaterfall.Exporters;
 
@@ -62,12 +61,7 @@ public class SdlExporter : IExporter
 		_init = true;
 	}
 
-	public void PushNewFrame(Image videoFrame, AudioBuffer audioFrame, double delta)
-	{
-		PushNewFrame((Image<Rgba32>)videoFrame, audioFrame, delta);
-	}
-
-	public void PushNewFrame(Image<Rgba32> videoFrame, AudioBuffer audioFrame, double delta)
+	public void PushNewFrame(ICanvas videoFrame, AudioBuffer audioFrame, double delta)
 	{
 		if (!_init)
 		{

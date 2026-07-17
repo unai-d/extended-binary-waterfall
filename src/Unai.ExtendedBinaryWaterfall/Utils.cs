@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
+using System.Drawing;
 using Unai.ExtendedBinaryWaterfall.Parsers.WindowsIcon;
 
 namespace Unai.ExtendedBinaryWaterfall;
@@ -205,7 +205,7 @@ public static class Utils
 										foreach (var bestIcon in bestIconGi.AssociatedIcons(peFile))
 										{
 											byte[] iconData = bestIcon.AsIco(); // returns either headless BMP or PNG
-											sf.Icon = GetImageFromWindowsIconData(iconData);
+											// sf.Icon = GetImageFromWindowsIconData(iconData);
 
 											if (sf.Icon != null) break;
 										}
@@ -227,7 +227,7 @@ public static class Utils
 					{
 						foreach (var icon in peFile.Icons())
 						{
-							sf.Icon = GetImageFromWindowsIconData(icon);
+							// sf.Icon = GetImageFromWindowsIconData(icon);
 											
 							if (sf.Icon != null) break;
 						}
@@ -239,40 +239,40 @@ public static class Utils
 				}
 				break;
 			
-			case ".bmp" or ".jpg" or ".jpeg" or ".png" or ".tif" or ".tiff" or ".png" or ".webp" or ".tga":
-				try
-				{
-					target.Position = sf.StartOffset;
-					byte[] imageBuf = new byte[sf.Length];
-					target.ReadExactly(imageBuf);
-					sf.Icon = Image.Load(imageBuf);
-				}
-				catch (Exception ex)
-				{
-					Logger.Error($"Cannot read image subfile: {ex.Message}");
-				}
-				break;
+			// case ".bmp" or ".jpg" or ".jpeg" or ".png" or ".tif" or ".tiff" or ".png" or ".webp" or ".tga":
+			// 	try
+			// 	{
+			// 		target.Position = sf.StartOffset;
+			// 		byte[] imageBuf = new byte[sf.Length];
+			// 		target.ReadExactly(imageBuf);
+			// 		sf.Icon = Image.Load(imageBuf);
+			// 	}
+			// 	catch (Exception ex)
+			// 	{
+			// 		Logger.Error($"Cannot read image subfile: {ex.Message}");
+			// 	}
+			// 	break;
 		}
 					
-		sf.Icon?.Mutate(ctx => ctx.Resize(0, 128));
+		// sf.Icon?.Mutate(ctx => ctx.Resize(0, 128));
 
 		return sf;
 	}
 
-	private static Image GetImageFromWindowsIconData(byte[] iconData)
-	{
-		ArgumentNullException.ThrowIfNull(iconData);
+	// private static Image GetImageFromWindowsIconData(byte[] iconData)
+	// {
+	// 	ArgumentNullException.ThrowIfNull(iconData);
 		
-		if (iconData[0] == 0x89 && iconData[1] == 0x50) // PNG
-		{
-			return Image.Load(iconData);
-		}
+	// 	if (iconData[0] == 0x89 && iconData[1] == 0x50) // PNG
+	// 	{
+	// 		return Image.Load(iconData);
+	// 	}
 		
-		var iconParser = new WindowsIconParser();
-		iconParser.Load(iconData);
+	// 	var iconParser = new WindowsIconParser();
+	// 	iconParser.Load(iconData);
 
-		return Image.Load(iconParser.Entries.First().GetBitmap());
-	}
+	// 	return Image.Load(iconParser.Entries.First().GetBitmap());
+	// }
 
 	internal static IEnumerable<float> NearestNeighborResample(this IList<float> input, int newSampleCount = 48000)
 	{

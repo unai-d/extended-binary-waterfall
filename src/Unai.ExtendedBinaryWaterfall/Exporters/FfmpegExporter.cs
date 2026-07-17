@@ -1,8 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using Unai.ExtendedBinaryWaterfall.Renderers;
 
 namespace Unai.ExtendedBinaryWaterfall.Exporters;
 
@@ -311,12 +310,7 @@ public class FfmpegExporter : IExporter
 		}
 	}
 
-	public void PushNewFrame(Image videoFrame, AudioBuffer audioFrame, double delta)
-	{
-		PushNewFrame((Image<Rgba32>)videoFrame, audioFrame, delta);
-	}
-
-	public unsafe void PushNewFrame(Image<Rgba32> videoFrame, AudioBuffer audioFrame, double delta)
+	public unsafe void PushNewFrame(ICanvas videoFrame, AudioBuffer audioFrame, double delta)
 	{
 		if (!_init)
 		{
@@ -336,25 +330,25 @@ public class FfmpegExporter : IExporter
 			Marshal.Copy(pixelData, 0, (nint)_videoAvFramePre->data[0], pixelData.Length);
 			ffmpeg.sws_scale(_swsCtx, _videoAvFramePre->data, _videoAvFramePre->linesize, 0, _videoAvFramePre->height, _videoAvFrame->data, _videoAvFrame->linesize);
 		}
-		else if (_videoAvFrame->format == (int)AVPixelFormat.AV_PIX_FMT_GBRP)
-		{
-			// Unoptimized pixel copy.
-			videoFrame.ProcessPixelRows((pa) =>
-			{
-				for (int y = 0; y < pa.Height; y++)
-				{
-					var row = pa.GetRowSpan(y);
+		// else if (_videoAvFrame->format == (int)AVPixelFormat.AV_PIX_FMT_GBRP)
+		// {
+		// 	// Unoptimized pixel copy.
+		// 	// videoFrame.ProcessPixelRows((pa) =>
+		// 	// {
+		// 	// 	for (int y = 0; y < pa.Height; y++)
+		// 	// 	{
+		// 	// 		var row = pa.GetRowSpan(y);
 
-					for (int x = 0; x < pa.Width; x++)
-					{
-						var p = row[x];
-						_videoAvFrame->data[0][_videoAvFrame->linesize[0] * y + x] = p.G;
-						_videoAvFrame->data[1][_videoAvFrame->linesize[1] * y + x] = p.B;
-						_videoAvFrame->data[2][_videoAvFrame->linesize[2] * y + x] = p.R;
-					}
-				}
-			});
-		}
+		// 	// 		for (int x = 0; x < pa.Width; x++)
+		// 	// 		{
+		// 	// 			var p = row[x];
+		// 	// 			_videoAvFrame->data[0][_videoAvFrame->linesize[0] * y + x] = p.G;
+		// 	// 			_videoAvFrame->data[1][_videoAvFrame->linesize[1] * y + x] = p.B;
+		// 	// 			_videoAvFrame->data[2][_videoAvFrame->linesize[2] * y + x] = p.R;
+		// 	// 		}
+		// 	// 	}
+		// 	// });
+		// }
 
 		_videoAvFrame->time_base.num = _videoCtx->time_base.num;
 		_videoAvFrame->time_base.den = _videoCtx->time_base.den;

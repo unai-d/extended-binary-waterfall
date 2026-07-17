@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Raylib_cs;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using Unai.ExtendedBinaryWaterfall.Exporters;
+using Unai.ExtendedBinaryWaterfall.Renderers;
 
 namespace Unai.ExtendedBinaryWaterfall.Gui.RlImGui.Exporters
 {
@@ -21,15 +20,7 @@ namespace Unai.ExtendedBinaryWaterfall.Gui.RlImGui.Exporters
 			
 		}
 
-		public void PushNewFrame(SixLabors.ImageSharp.Image videoFrame, AudioBuffer audioFrame, double delta = 0.04)
-		{
-			if (videoFrame is Image<Rgba32> videoFrameRgba32)
-			{
-				PushNewFrame(videoFrameRgba32, audioFrame, delta);
-			}
-		}
-
-		public void PushNewFrame(Image<Rgba32> videoFrame, AudioBuffer audioFrame, double delta = 0.04)
+		public void PushNewFrame(ICanvas videoFrame, AudioBuffer audioFrame, double delta = 0.04)
 		{
 			var pixelData = new byte[videoFrame.Width * videoFrame.Height * 4];
 			videoFrame.CopyPixelDataTo(pixelData);
