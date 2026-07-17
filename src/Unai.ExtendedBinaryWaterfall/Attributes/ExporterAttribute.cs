@@ -1,6 +1,6 @@
 using System;
 
-namespace Unai.ExtendedBinaryWaterfall;
+namespace Unai.ExtendedBinaryWaterfall.Attributes;
 
 [AttributeUsage(AttributeTargets.Class)]
 public class ExporterAttribute(string id, string name = null, string description = null) : Attribute

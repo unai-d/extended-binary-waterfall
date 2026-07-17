@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-namespace Unai.ExtendedBinaryWaterfall;
+namespace Unai.ExtendedBinaryWaterfall.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
 public class CliParameterAttribute : Attribute

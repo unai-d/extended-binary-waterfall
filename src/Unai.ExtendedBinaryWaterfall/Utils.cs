@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Drawing;
 using Unai.ExtendedBinaryWaterfall.Parsers.WindowsIcon;
+using Unai.ExtendedBinaryWaterfall.Attributes;
 
 namespace Unai.ExtendedBinaryWaterfall;
 

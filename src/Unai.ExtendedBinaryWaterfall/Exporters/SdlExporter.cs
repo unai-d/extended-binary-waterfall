@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using SDL_Sharp;
 using SDL_Sharp.Loader;
+using Unai.ExtendedBinaryWaterfall.Attributes;
 using Unai.ExtendedBinaryWaterfall.Renderers;
 
 namespace Unai.ExtendedBinaryWaterfall.Exporters;

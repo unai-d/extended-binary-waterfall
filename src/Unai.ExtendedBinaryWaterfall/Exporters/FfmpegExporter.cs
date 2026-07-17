@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
+using Unai.ExtendedBinaryWaterfall.Attributes;
 using Unai.ExtendedBinaryWaterfall.Renderers;
 
 namespace Unai.ExtendedBinaryWaterfall.Exporters;
