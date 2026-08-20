@@ -162,12 +162,12 @@ public class SdlExporter : IExporter
 			}
 		}
 
-		if (renderSpeedRatio < 1)
-		{
-			Logger.Warning($"Render too slow! Generator is rendering at {renderSpeedRatio:N2}× speed.");
-		}
+		// if (renderSpeedRatio < 1)
+		// {
+		// 	Logger.Warning($"Render too slow! Generator is rendering at {renderSpeedRatio:N2}× speed.");
+		// }
 
-		Console.Error.Write($"frame={_frameCount,6} wcframe={wcFrameCount,6} diff={framediff,6} — {(int)deltaFps} fps aqueue={audioQueue}\x1b[K\x1b[G");
+		Console.Error.Write($"frame={_frameCount,6} wcframe={wcFrameCount,6} diff={framediff,6} speed={renderSpeedRatio:N2} — {(int)deltaFps} fps aqueue={audioQueue}\x1b[K\x1b[G");
 	}
 
 	public void Finish()
