@@ -30,7 +30,11 @@ public class Iso9660Parser : IParser
 		var dentVolSeqNum = br.ReadInt16(); br.BaseStream.Position += 2;
 		var dentNameLen = br.ReadByte();
 		var dentName = encoding.GetString(br.ReadBytes(dentNameLen));
-		// Console.Error.WriteLine($"{dentLoc:X8} {dentNameLen} '{dentName}'");
+
+		if (dentName.Length >= 3 && dentName[^2] == ';') // Remove ISO9660 revision suffix if present.
+		{
+			dentName = dentName[..^2];
+		}
 
 		if (dentNameLen % 2 == 0) br.BaseStream.Position++;
 
