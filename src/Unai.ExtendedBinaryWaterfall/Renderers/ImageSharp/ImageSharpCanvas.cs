@@ -12,14 +12,16 @@ namespace Unai.ExtendedBinaryWaterfall.Renderers.ImageSharp;
 
 public class ImageSharpCanvas : ICanvas
 {
+	internal ImageSharpRenderer _renderer;
 	internal Image<Rgba32> _image;
 
 	public int Width { get => _image.Width; }
 
 	public int Height { get => _image.Height; }
 
-	public ImageSharpCanvas(Image<Rgba32> image)
+	public ImageSharpCanvas(ImageSharpRenderer renderer, Image<Rgba32> image)
 	{
+		_renderer = renderer;
 		_image = image;
 	}
 
@@ -48,13 +50,17 @@ public class ImageSharpCanvas : ICanvas
 
 	public ICanvas DrawText(IFont font, TextDrawingOptions opt, string text, Color color)
 	{
-		_image.Mutate(ictx => ictx.DrawText(new RichTextOptions(((ImageSharpFont)font)._font)
+		var isfont = (ImageSharpFont)font;
+
+		_image.Mutate(ictx => ictx.DrawText(new RichTextOptions(isfont._font)
 		{
 			Origin = (Vector2)opt.Origin,
 			HorizontalAlignment = opt.HorizontalAlignment.ToImageSharp(),
 			VerticalAlignment = opt.VerticalAlignment.ToImageSharp(),
 			TextAlignment = opt.TextAlignment.ToImageSharp(),
+			FallbackFontFamilies = [ _renderer._emojiFontFamily ]
 		}, text, new SolidBrush(color.ToImageSharp())));
+
 		return this;
 	}
 

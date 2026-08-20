@@ -297,7 +297,7 @@ public class Generator
 			[
 				.. subFiles
 				.OrderBy(sf => sf.StartOffset)
-				.Select(sf => Utils.ParseSubfile(InputFileStream, sf))
+				.Select(sf => Utils.ParseSubfile(InputFileStream, sf, Renderer))
 			];
 		}
 

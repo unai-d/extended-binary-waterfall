@@ -9,6 +9,7 @@ public class ImageSharpRenderer : IRenderer
 {
 	private FontCollection _fontCollection;
 	private FontFamily _fontFamily;
+	internal FontFamily _emojiFontFamily;
 
 	public string FontName { get; set; }
 
@@ -36,8 +37,8 @@ public class ImageSharpRenderer : IRenderer
 		{
 			if (_fontCollection.TryGet("unifont", out _fontFamily))
 			{
-				// TODO
-				// _fontCollection.TryGet("unifont upper", out _emojiFontFamily);
+				// FIXME: This is hardcoded!
+				_fontCollection.TryGet("unifont upper", out _emojiFontFamily);
 			}
 			else
 			{
@@ -55,12 +56,17 @@ public class ImageSharpRenderer : IRenderer
 
 	public ICanvas CreateCanvas(int width, int height)
 	{
-		return new ImageSharpCanvas(new Image<Rgba32>(width, height));
+		return new ImageSharpCanvas(this, new Image<Rgba32>(width, height));
 	}
 
 	public ICanvas CreateCanvas(byte[] buf, int width, int height)
 	{
-		return new ImageSharpCanvas(Image.LoadPixelData<Rgba32>(buf, width, height));
+		return new ImageSharpCanvas(this, Image.LoadPixelData<Rgba32>(buf, width, height));
+	}
+
+	public ICanvas CreateCanvasFromImage(byte[] imageData)
+	{
+		return new ImageSharpCanvas(this, Image.Load<Rgba32>(imageData));
 	}
 
 	public IFont CreateFont(string fontName, float size)
